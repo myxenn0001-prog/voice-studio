@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+PackageIdentifier: TechFlow.VoiceStudio
+PackageVersion: 1.0.0
+PackageLocale: en-US
+Publisher: TechFlow
+PublisherUrl: https://myxenn0001-prog.github.io/voice-studio
+PackageName: Voice Studio
+PackageUrl: https://github.com/myxenn0001-prog/voice-studio
+License: Apache-2.0
+LicenseUrl: https://github.com/myxenn0001-prog/voice-studio/blob/main/LICENSE
+ShortDescription: Free, offline voiceovers and captions on your own computer.
+Description: Voice Studio turns a script into spoken audio on your own computer, with built-in voices in several languages, optional voice cloning, and short captions for video editors. No account, no per-minute fees, nothing uploaded.
+Tags:
+  - text-to-speech
+  - voiceover
+  - captions
+  - offline
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

@@ -1,0 +1,5 @@
+# Voice engines (for reference; the launchers and Dockerfile install each one separately,
+# so one failing engine never blocks the other). Install chatterbox first: it pins the torch version.
+chatterbox-tts
+kokoro>=0.9.4
+faster-whisper

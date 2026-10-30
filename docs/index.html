@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Studio: free voiceovers on your own computer</title>
+<meta name="description" content="Turn a script into spoken audio for free. No account, no per-minute fees, nothing uploaded. Built-in voices in six languages, optional voice cloning, and short captions for editors. Free and open source.">
+<meta property="og:title" content="Voice Studio: free voiceovers on your own computer">
+<meta property="og:description" content="No account, no per-minute fees, nothing uploaded. Free and open source.">
+<meta property="og:image" content="https://myxenn0001-prog.github.io/voice-studio/screenshots/studio.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+:root {
+  --bg: #ECEEF2; --panel: #FFFFFF; --ink: #1B2330; --muted: #4A5566; --line: #D3D9E1;
+  --accent: #2447E8; --accent-ink: #FFFFFF; --accent-soft: #E2E8FD; --dark: #1B2330; --dark-ink: #F2F4F8; --dark-muted: #C3CAD6;
+  --ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Roboto, sans-serif;
+  --page: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #13171E; --panel: #1B212A; --ink: #E7EBF1; --muted: #A9B4C4; --line: #2D3541;
+          --accent: #8499FF; --accent-ink: #0E1430; --accent-soft: #232C57; --dark: #0C0F14; }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 var(--ui); }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+h1, h2 { font-family: var(--page); font-weight: 600; margin: 0; }
+h2 { font-size: 34px; line-height: 1.2; margin-bottom: 14px; }
+h3 { margin: 0 0 6px; font-size: 18px; }
+p { margin: 0 0 14px; }
+
+nav.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; padding: 18px 0; }
+.brand { display: flex; align-items: center; gap: 10px; font: 600 22px/1 var(--page); color: inherit; text-decoration: none; }
+.brand img { width: 30px; height: 30px; }
+nav.top .links { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px 22px; }
+nav.top .links a { color: var(--ink); font-weight: 600; text-decoration: none; font-size: 15px; }
+nav.top .links a:hover { color: var(--accent); }
+
+.hero { padding-top: 36px; padding-bottom: 56px; }
+.hero h1 { font-size: clamp(38px, 6vw, 62px); line-height: 1.07; max-width: 15em; }
+.hero .sub { font-size: 21px; color: var(--muted); max-width: 33em; margin: 20px 0 28px; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; }
+.btn { display: inline-block; text-decoration: none; font-weight: 600; border-radius: 6px; padding: 14px 24px; min-height: 48px; border: 1px solid var(--line); color: var(--ink); background: transparent; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.1); }
+.meta { color: var(--muted); font-size: 14px; margin-top: 14px; }
+.meta a { color: inherit; }
+.shot { margin-top: 44px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; box-shadow: 0 30px 60px -36px rgba(20,30,50,.5); background: var(--panel); }
+.shot img { display: block; width: 100%; height: auto; }
+
+section.block { padding: 64px 0; }
+section.alt { background: var(--panel); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.lead { color: var(--muted); max-width: 40em; margin-bottom: 34px; }
+.steps { display: flex; flex-wrap: wrap; gap: 34px 48px; }
+.steps > div { flex: 1 1 260px; border-top: 3px solid var(--accent); padding-top: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 30px 44px; }
+.grid p { color: var(--muted); margin: 0; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 30px; margin-top: 8px; }
+.two figure { margin: 0; }
+.two img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; display: block; }
+.two figcaption { color: var(--muted); font-size: 15px; margin-top: 10px; }
+
+.honest { background: var(--dark); color: var(--dark-ink); }
+.honest h2 { color: var(--dark-ink); }
+.honest p { color: var(--dark-muted); max-width: 44em; }
+.honest .cols { display: flex; flex-wrap: wrap; gap: 24px 56px; margin-top: 18px; }
+.honest .cols > div { flex: 1 1 300px; }
+.honest h3 { color: var(--dark-ink); }
+
+details { border-top: 1px solid var(--line); padding: 16px 0; }
+details:last-of-type { border-bottom: 1px solid var(--line); }
+summary { cursor: pointer; font-weight: 600; font-size: 18px; }
+details p { color: var(--muted); margin: 10px 0 0; max-width: 46em; }
+.help { background: var(--accent-soft); border-radius: 8px; padding: 22px 26px; margin-top: 8px; }
+.help h3 { margin-bottom: 10px; }
+.help ul { margin: 0; padding-left: 20px; }
+.help li { margin-bottom: 8px; }
+footer { padding: 44px 0 56px; color: var(--muted); font-size: 15px; }
+footer a { color: inherit; }
+footer .row { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.skip { position: absolute; left: -999px; } .skip:focus { left: 12px; top: 12px; background: var(--panel); padding: 8px 12px; z-index: 5; }
+@media (max-width: 640px) { .wrap { padding: 0 18px; } h2 { font-size: 28px; } section.block { padding: 46px 0; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<div class="wrap">
+  <nav class="top" aria-label="Main">
+    <a class="brand" href="./"><img src="icon.png" alt="" width="30" height="30">Voice Studio</a>
+    <div class="links">
+      <a href="#download">Download</a><a href="try/">Try in your browser</a><a href="#faq">Questions</a>
+      <a href="https://github.com/myxenn0001-prog/voice-studio">Source code</a>
+    </div>
+  </nav>
+</div>
+
+<main id="main">
+  <header class="wrap hero">
+    <h1>Free voiceovers on your own computer.</h1>
+    <p class="sub">Turn a script into spoken audio. No account, no per-minute fees, and nothing leaves your computer.</p>
+    <div class="cta">
+      <a class="btn primary" id="mainDownload" href="#download">Download Voice Studio</a>
+      <a class="btn" href="try/">Try it in your browser</a>
+    </div>
+    <p class="meta" id="heroMeta">Free and open source. Windows, Mac (Apple Silicon) and Linux. <a href="#download">All downloads</a></p>
+    <div class="shot"><img src="screenshots/studio.png" width="1280" height="940" alt="The Voice Studio window: a script on the left, with the mode, voice and delivery settings on the right, and a finished voiceover ready to download."></div>
+  </header>
+
+  <section class="block alt">
+    <div class="wrap">
+      <h2>Three steps</h2>
+      <p class="lead">No technical know-how needed.</p>
+      <div class="steps">
+        <div><h3>1. Download and install</h3><p>Run the installer. The first time you open it, Voice Studio sets itself up, which downloads the voice software and takes a few minutes.</p></div>
+        <div><h3>2. Paste your script</h3><p>Type it, paste it, or drop in a text or Word file. Pick a voice and a language.</p></div>
+        <div><h3>3. Make the voiceover</h3><p>Press one button. Download the audio, and short captions for your video editor if you want them.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2>What you get</h2>
+      <p class="lead">Everything runs on your computer, with or without a graphics card.</p>
+      <div class="grid">
+        <div><h3>Built-in voices</h3><p>More than 40 voices in English (US and UK), Spanish, French, Hindi, Italian and Portuguese. Quick on an ordinary laptop.</p></div>
+        <div><h3>Voice cloning</h3><p>Copy a voice you have permission to use from a short recording, and speak it in 23 languages, including Arabic.</p></div>
+        <div><h3>Short captions</h3><p>Timed captions for your editor as an SRT file, in short-form style of one line at a time, or standard subtitles.</p></div>
+        <div><h3>Made for long scripts</h3><p>Scripts are rendered in parts with progress and a cancel button. Control pauses, speed and the file type.</p></div>
+        <div><h3>Your own voice library</h3><p>Keep your voices next to the built-in ones, and add more whenever you like.</p></div>
+        <div><h3>Private by design</h3><p>Your scripts, voices and audio stay on your computer. After setup it works without internet.</p></div>
+      </div>
+      <div class="two">
+        <figure><img loading="lazy" src="screenshots/voices.png" width="1280" height="940" alt="The Voices page, listing two of your own voices and the built-in voices."><figcaption>Your own voices, next to the built-in ones.</figcaption></figure>
+        <figure><img loading="lazy" src="screenshots/captions.png" width="1280" height="940" alt="The Captions page after processing an audio file, with downloads for the short captions and a timestamp list."><figcaption>Short captions from any audio or video file.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="block honest">
+    <div class="wrap">
+      <h2>Why it is free</h2>
+      <p>Many voice services charge by the minute or the month because they run the voices on their own servers. Voice Studio runs open-source voice models on your computer instead, so there is no one to pay and nothing to upload.</p>
+      <div class="cols">
+        <div><h3>What you gain</h3><p>No subscription, no usage limits, no account, and full privacy. It also works offline.</p></div>
+        <div><h3>What it costs you</h3><p>The best paid services can sound more polished, and rendering uses your computer's power. Cloning in particular is slow without a graphics card. Try it and judge the voices for yourself.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="download">
+    <div class="wrap">
+      <h2>Download</h2>
+      <p class="lead">Free, with no sign-up. Pick your system.</p>
+      <div class="cta">
+        <a class="btn primary" data-os="windows" href="https://github.com/myxenn0001-prog/voice-studio/releases/latest/download/VoiceStudio-Setup.exe">Windows (.exe)</a>
+        <a class="btn primary" data-os="mac" href="https://github.com/myxenn0001-prog/voice-studio/releases/latest/download/VoiceStudio-macOS.dmg">Mac, Apple Silicon (.dmg)</a>
+        <a class="btn primary" data-os="linux" href="https://github.com/myxenn0001-prog/voice-studio/releases/latest/download/VoiceStudio-Linux.AppImage">Linux (.AppImage)</a>
+      </div>
+      <p class="meta">Other ways to get it: <a href="try/">use it in your browser</a>, <a href="https://github.com/myxenn0001-prog/voice-studio#other-ways-to-install">install with winget, Homebrew or Pinokio</a>, or <a href="https://github.com/myxenn0001-prog/voice-studio">build it from the source code</a>. Checksums are listed with each <a href="https://github.com/myxenn0001-prog/voice-studio/releases/latest">release</a>.</p>
+      <div class="help">
+        <h3>If your computer shows a warning</h3>
+        <ul>
+          <li><b>Windows:</b> "Windows protected your PC" appears for new programs from small publishers. Choose <b>More info</b>, then <b>Run anyway</b>.</li>
+          <li><b>Mac:</b> Open the disk image, drag Voice Studio to Applications, then <b>right-click it and choose Open</b> the first time.</li>
+          <li><b>Linux:</b> Right-click the file, open Properties, tick <b>Allow executing file as program</b>, then double-click it. Or run <code>chmod +x</code> on it.</li>
+          <li><b>First launch:</b> a window shows the one-time setup. It needs internet and takes several minutes. After that, Voice Studio opens in seconds.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block alt" id="faq">
+    <div class="wrap">
+      <h2>Questions</h2>
+      <details><summary>Is it really free?</summary><p>Yes. Voice Studio is open source under the Apache-2.0 license. There are no ads, no accounts and no paid tier hiding features.</p></details>
+      <details><summary>Is it as good as paid services like ElevenLabs?</summary><p>Not always. The best paid services are generally more polished and faster. Voice Studio's built-in voices are good for narration, explainers and drafts, and cloning is impressive for a free tool. The honest advice is to try a short script and compare.</p></details>
+      <details><summary>Do I need a graphics card?</summary><p>No. Built-in voices run well on an ordinary computer. Cloning also works without one but is slow, so it suits short clips. A graphics card makes it comfortable.</p></details>
+      <details><summary>Does it need internet?</summary><p>Only for the one-time setup and the first use of each voice engine, which download the voice software. Afterwards it works offline.</p></details>
+      <details><summary>Can I use the audio in my videos and for clients?</summary><p>Voice Studio does not claim any rights to the audio you make. The voice models it uses are published under licenses that allow commercial use, but you are responsible for having the right to any voice you clone and for what your script says. This is not legal advice.</p></details>
+      <details><summary>Can I clone anyone's voice?</summary><p>Only a voice that is yours, or that belongs to someone who has agreed. Voice Studio asks you to confirm this, and the cloning model adds an inaudible watermark to its audio. Please read the <a href="legal/responsible-use.html">responsible use note</a>.</p></details>
+      <details><summary>Who makes it, and how can I help?</summary><p>Voice Studio is built by TechFlow so that anyone can make voiceovers without paying for a cloud service. You can help by <a href="https://github.com/myxenn0001-prog/voice-studio">starring the project</a>, reporting problems, testing languages, translating, or sending a pull request. Questions: <a href="mailto:myofficialemail89@gmail.com">myofficialemail89@gmail.com</a>.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span>Built by TechFlow</span>
+      <span>Apache-2.0 license</span>
+      <a href="https://github.com/myxenn0001-prog/voice-studio">Source code</a>
+      <a href="legal/terms.html">Terms of Use</a>
+      <a href="legal/privacy.html">Privacy</a>
+      <a href="legal/responsible-use.html">Responsible use</a>
+      <a href="legal/licenses.html">Licenses</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Show the right download first for this visitor's system.
+(function () {
+  const ua = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent || "";
+  const os = /win/i.test(ua) ? "windows" : /mac/i.test(ua) && !/iphone|ipad/i.test(navigator.userAgent) ? "mac" : /linux|x11/i.test(ua) && !/android/i.test(navigator.userAgent) ? "linux" : null;
+  const names = { windows: "Windows", mac: "Mac", linux: "Linux" };
+  if (!os) return;
+  const link = document.querySelector('[data-os="' + os + '"]');
+  const main = document.getElementById("mainDownload");
+  if (link && main) { main.href = link.href; main.textContent = "Download for " + names[os]; }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# What the Voice Studio AppImage runs: sets the app up the first time (in a terminal window so you can see progress), then opens it.
+HERE="$(dirname "$(readlink -f "$0")")"
+SHARE="$HERE/usr/share/voice-studio"
+HOME_DIR="${VOICESTUDIO_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/voice-studio}"
+APPVER="$(cat "$SHARE/app/VERSION" 2>/dev/null)"
+INSTVER="$(cat "$HOME_DIR/.installed" 2>/dev/null)"
+
+if [ ! -x "$HOME_DIR/venv/bin/python" ] || [ "$APPVER" != "$INSTVER" ]; then
+  mkdir -p "$HOME_DIR"
+  SETUP="$SHARE/setup.sh"
+  if   command -v x-terminal-emulator >/dev/null 2>&1; then exec x-terminal-emulator -e bash "$SETUP"
+  elif command -v gnome-terminal      >/dev/null 2>&1; then exec gnome-terminal -- bash "$SETUP"
+  elif command -v konsole             >/dev/null 2>&1; then exec konsole -e bash "$SETUP"
+  elif command -v xfce4-terminal      >/dev/null 2>&1; then exec xfce4-terminal -x bash "$SETUP"
+  elif command -v xterm               >/dev/null 2>&1; then exec xterm -e bash "$SETUP"
+  fi
+  command -v notify-send >/dev/null 2>&1 && notify-send "Voice Studio" "Setting up for the first time. This takes several minutes; the app opens when it is done."
+  exec bash "$SETUP" >> "$HOME_DIR/setup.log" 2>&1
+fi
+export VOICESTUDIO_DATA="$HOME_DIR/data" VOICESTUDIO_INSTALLED=1
+exec "$HOME_DIR/venv/bin/python" "$SHARE/app/launcher.py"

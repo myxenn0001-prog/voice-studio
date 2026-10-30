@@ -1,0 +1,101 @@
+name: Build installers
+
+# Publishing a release: create a tag that starts with "v" (for example v1.0.0) and push it.
+# Trying it out: Actions tab > "Build installers" > Run workflow. That builds the installers
+# and keeps them as downloadable artifacts, without publishing a release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number for a test build"
+        default: "0.0.0-test"
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Work out the version
+        id: v
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then v="${GITHUB_REF_NAME#v}"; else v="${{ inputs.version }}"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Build the installer
+        shell: pwsh
+        run: ./packaging/windows/build.ps1 -Version "${{ steps.v.outputs.version }}"
+      # Optional code signing removes the Windows "unknown publisher" warning. See PUBLISHING.md.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/VoiceStudio-Setup.exe
+          if-no-files-found: error
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Work out the version
+        id: v
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then v="${GITHUB_REF_NAME#v}"; else v="${{ inputs.version }}"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Build the disk image
+        run: bash packaging/macos/build_dmg.sh "${{ steps.v.outputs.version }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/VoiceStudio-macOS.dmg
+          if-no-files-found: error
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Work out the version
+        id: v
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then v="${GITHUB_REF_NAME#v}"; else v="${{ inputs.version }}"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Build the AppImage
+        run: bash packaging/linux/build_appimage.sh "${{ steps.v.outputs.version }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/VoiceStudio-Linux.AppImage
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, macos, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum VoiceStudio-* > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/VoiceStudio-Setup.exe
+            dist/VoiceStudio-macOS.dmg
+            dist/VoiceStudio-Linux.AppImage
+            dist/SHA256SUMS.txt

@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Studio</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/icon.png">
+<style>
+:root {
+  --bg: #ECEEF2;
+  --sheet: #FFFFFF;
+  --ink: #1B2330;
+  --muted: #5B6677;
+  --line: #D3D9E1;
+  --accent: #2447E8;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E2E8FD;
+  --ok: #17724E;
+  --warn: #9A5200;
+  --err: #B3261E;
+  --err-soft: #FBE9E7;
+  --ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Roboto, sans-serif;
+  --page: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #13171E; --sheet: #1B212A; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2D3541;
+    --accent: #8499FF; --accent-ink: #0E1430; --accent-soft: #232C57;
+    --ok: #5FD0A1; --warn: #F0B15A; --err: #FF8A80; --err-soft: #3A1F1D;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #13171E; --sheet: #1B212A; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2D3541;
+  --accent: #8499FF; --accent-ink: #0E1430; --accent-soft: #232C57;
+  --ok: #5FD0A1; --warn: #F0B15A; --err: #FF8A80; --err-soft: #3A1F1D;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--ui); min-height: 100vh; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+a { color: var(--accent); }
+
+/* top bar */
+.top { display: flex; align-items: center; gap: 24px; padding: 14px 28px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.brand { font: 600 20px/1 var(--page); letter-spacing: .01em; margin-right: 8px; }
+.tabs { display: flex; gap: 4px; }
+.tab { background: none; border: 0; padding: 8px 14px; border-radius: 6px; color: var(--muted); cursor: pointer; font-weight: 600; }
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); }
+.machine { margin-left: auto; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.dot.light { background: var(--warn); }
+
+dialog { border: 1px solid var(--line); border-radius: 8px; background: var(--sheet); color: var(--ink); max-width: 560px; width: calc(100% - 32px); padding: 26px 28px; }
+dialog::backdrop { background: rgba(10, 14, 22, .65); }
+dialog h2 { font: 600 24px/1.2 var(--page); margin: 0 0 10px; }
+dialog ul { margin: 0 0 14px; padding-left: 20px; } dialog li { margin-bottom: 6px; }
+dialog .actions .btn.primary { width: auto; flex: 1 1 auto; }
+.foot { max-width: 1180px; margin: 0 auto; padding: 8px 28px 36px; color: var(--muted); font-size: 13px; }
+.foot a { color: inherit; }
+main { max-width: 1180px; margin: 0 auto; padding: 28px; }
+.studio { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 40px; align-items: start; }
+@media (max-width: 600px) { .tabs { overflow-x: auto; max-width: 100%; } .tab { padding: 8px 9px; font-size: 14px; white-space: nowrap; } .tabs { gap: 0; } }
+@media (max-width: 900px) { .studio { grid-template-columns: 1fr; gap: 28px; } main { padding: 18px; } .top { padding: 12px 18px; } }
+
+/* the script page */
+.sheet { background: var(--sheet); border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 1px 0 var(--line), 0 18px 40px -28px rgba(20,30,50,.35); }
+.sheet textarea { display: block; width: 100%; min-height: 420px; resize: vertical; border: 0; background: transparent; padding: 38px 44px; font: 19px/1.75 var(--page); outline: none; }
+.sheet textarea::placeholder { color: var(--muted); opacity: .7; }
+.sheet.over { outline: 2px dashed var(--accent); outline-offset: -10px; }
+.sheet-foot .link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-weight: 600; font-size: 13px; }
+.sheet-foot .over-limit { color: var(--err); font-weight: 600; }
+.sheet-foot { display: flex; justify-content: space-between; gap: 12px; padding: 10px 44px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; flex-wrap: wrap; }
+@media (max-width: 600px) { .sheet textarea { padding: 24px 20px; font-size: 17px; } .sheet-foot { padding: 10px 20px; } }
+
+/* controls column */
+.controls > section { padding: 0 0 22px; margin: 0 0 22px; border-bottom: 1px solid var(--line); }
+.controls > section:last-child { border-bottom: 0; margin-bottom: 0; }
+h2 { font: 600 15px/1.3 var(--ui); margin: 0 0 10px; }
+h3 { font: 600 14px/1.3 var(--ui); margin: 0 0 6px; }
+.hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+
+.modes { display: grid; gap: 8px; }
+.mode { text-align: left; background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; cursor: pointer; display: block; width: 100%; }
+.mode:hover { border-color: var(--muted); }
+.mode[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.mode b { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.mode span { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.badge { font-size: 12px; font-weight: 600; color: var(--ok); }
+.badge.off { color: var(--err); }
+
+.voices { border: 1px solid var(--line); border-radius: 6px; max-height: 280px; overflow: auto; }
+.voice-group { padding: 8px 12px 4px; font-size: 13px; font-weight: 600; color: var(--muted); background: var(--bg); position: sticky; top: 0; }
+.voice { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-top: 1px solid var(--line); cursor: pointer; }
+.voice:first-child { border-top: 0; }
+.voice:hover { background: var(--bg); }
+.voice[aria-checked="true"] { background: var(--accent-soft); }
+.voice .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.voice .sub { color: var(--muted); font-size: 12px; }
+.empty { padding: 16px 12px; color: var(--muted); font-size: 14px; }
+
+.btn { border: 1px solid var(--line); background: transparent; border-radius: 6px; padding: 7px 12px; cursor: pointer; font-weight: 600; }
+.btn:hover { border-color: var(--muted); }
+a.btn { color: inherit; text-decoration: none; display: inline-block; }
+.btn.small { padding: 3px 9px; font-size: 13px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); padding: 12px 16px; width: 100%; font-size: 16px; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.primary:disabled { opacity: .55; cursor: not-allowed; filter: none; }
+.btn.danger { color: var(--err); }
+.icon { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: var(--sheet); cursor: pointer; display: grid; place-items: center; padding: 0; flex: none; }
+.icon:hover { border-color: var(--accent); color: var(--accent); }
+.icon.busy { border-style: dashed; border-color: var(--accent); color: var(--accent); animation: spin 1.2s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .icon.busy { animation: none; } }
+.hint.bad { color: var(--err); }
+.icon svg { width: 12px; height: 12px; fill: currentColor; }
+
+.field { margin-bottom: 14px; }
+.field label, .field .lab { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
+.field output { color: var(--muted); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+select, input[type=text], input[type=number] { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--sheet); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* render progress */
+.job { margin-top: 28px; border-top: 2px solid var(--ink); padding-top: 16px; }
+.job-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.job-head h2 { margin: 0; }
+.job p { margin: 4px 0 12px; color: var(--muted); }
+.strip { display: flex; gap: 2px; height: 26px; align-items: stretch; margin: 10px 0 6px; }
+.strip i { flex: 1; min-width: 2px; background: var(--line); border-radius: 1px; transition: background .25s; }
+.strip i.on { background: var(--accent); }
+.strip.pulse i:not(.on):first-of-type { animation: blink 1s infinite; }
+@keyframes blink { 50% { background: var(--accent-soft); } }
+@media (prefers-reduced-motion: reduce) { .strip.pulse i { animation: none !important; } .strip i { transition: none; } }
+.job audio { width: 100%; margin: 8px 0 12px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.error { background: var(--err-soft); color: var(--err); padding: 10px 12px; border-radius: 6px; font-size: 14px; margin-top: 8px; }
+
+/* list pages */
+.page-title { font: 600 26px/1.2 var(--page); margin: 0 0 6px; }
+.lead { color: var(--muted); margin: 0 0 24px; max-width: 62ch; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 40px; align-items: start; }
+@media (max-width: 900px) { .two { grid-template-columns: 1fr; } }
+.list { border-top: 1px solid var(--line); }
+.item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.item .grow { flex: 1; min-width: 0; }
+.item .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .s { color: var(--muted); font-size: 13px; }
+.item .ex { font-family: var(--page); font-size: 16px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drop { border: 1.5px dashed var(--line); border-radius: 6px; padding: 18px; text-align: center; color: var(--muted); cursor: pointer; margin-bottom: 14px; }
+.drop:hover, .drop.over { border-color: var(--accent); color: var(--accent); }
+.drop b { color: var(--ink); display: block; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; margin: 4px 0 14px; }
+.check input { margin-top: 4px; accent-color: var(--accent); }
+.kv { display: grid; grid-template-columns: 140px 1fr; gap: 6px 16px; margin: 0 0 18px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+.eng { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.eng:first-child { border-top: 1px solid var(--line); }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 6px; font-size: 14px; z-index: 10; max-width: 90vw; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">Voice Studio</div>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" data-tab="studio" aria-selected="true">Studio</button>
+    <button class="tab" role="tab" data-tab="voices" aria-selected="false">Voices</button>
+    <button class="tab" role="tab" data-tab="captions" aria-selected="false">Captions</button>
+    <button class="tab" role="tab" data-tab="renders" aria-selected="false">Past renders</button>
+    <button class="tab" role="tab" data-tab="computer" aria-selected="false">This computer</button>
+  </nav>
+  <div class="machine" id="machine" title="Detected hardware"></div>
+</header>
+
+<main>
+  <!-- STUDIO -->
+  <div id="tab-studio" class="studio" role="tabpanel">
+    <div>
+      <div class="sheet">
+        <textarea id="script" dir="auto" placeholder="Paste or write your script here, or drop a .txt or .docx file onto this page. Leave a blank line between paragraphs to get a longer pause." aria-label="Script"></textarea>
+        <div class="sheet-foot"><span id="stats">0 words</span><button class="link" id="openFile" type="button">Open a .txt or .docx file</button><span id="estimate"></span></div>
+        <input type="file" id="scriptFile" accept=".txt,.md,.docx,text/plain" hidden>
+      </div>
+      <div id="job" class="job" hidden></div>
+    </div>
+
+    <div class="controls">
+      <section>
+        <h2>Mode</h2>
+        <div class="modes" id="modes" role="radiogroup" aria-label="Mode"></div>
+        <p class="hint" id="modeHint"></p>
+      </section>
+      <section>
+        <h2>Voice</h2>
+        <div class="field" id="langBox"><label for="lang">Language</label><select id="lang"></select></div>
+        <div class="voices" id="voiceList" role="radiogroup" aria-label="Voice"></div>
+        <p class="hint" id="previewNote" role="status" hidden></p>
+        <p class="hint">Add your own voices in the Voices tab.</p>
+      </section>
+      <section id="optionsBox">
+        <h2>Delivery</h2>
+        <div id="engineParams"></div>
+        <div>
+          <div class="field"><label for="pause">Pause between sentences <output id="pauseOut"></output></label>
+            <input type="range" id="pause" min="0" max="1500" step="50" value="250"></div>
+          <div class="field"><label for="ppause">Pause between paragraphs <output id="ppauseOut"></output></label>
+            <input type="range" id="ppause" min="0" max="3000" step="100" value="700"></div>
+        </div>
+        <div class="field"><label for="format">File type</label>
+          <select id="format"><option value="wav">WAV (best quality)</option><option value="flac">FLAC (lossless, smaller)</option><option value="mp3">MP3 (smallest)</option></select></div>
+        <label class="check" id="capOnBox"><input type="checkbox" id="capOn"><span>Also make short captions for editors (Whisper)</span></label>
+        <div id="capStudio" hidden></div>
+        <p class="hint" id="capStudioNote" hidden></p>
+      </section>
+      <section>
+        <button class="btn primary" id="renderBtn">Render voiceover</button>
+        <p class="hint" id="renderHint"></p>
+      </section>
+    </div>
+  </div>
+
+  <!-- VOICES -->
+  <div id="tab-voices" role="tabpanel" hidden>
+    <h1 class="page-title">Voices</h1>
+    <p class="lead">Built-in voices work right away. To use a voice of your own, add a short, clean recording and render in Clone mode.</p>
+    <div class="two">
+      <div>
+        <h2>Your voices</h2>
+        <div class="list" id="customList"></div>
+        <h2 style="margin-top:28px">Built-in voices</h2>
+        <div class="list" id="stockList"></div>
+      </div>
+      <div>
+        <h2>Add a voice</h2>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose an audio file"><b id="dropName">Choose or drop an audio file</b>WAV, MP3, FLAC or OGG, 5 to 30 seconds</div>
+        <input type="file" id="voiceFile" accept=".wav,.mp3,.flac,.ogg,audio/*" hidden>
+        <div class="field"><label for="voiceName">Voice name</label><input type="text" id="voiceName" maxlength="60" placeholder="e.g. Narrator, Sam"></div>
+        <label class="check"><input type="checkbox" id="consent"><span>I own this voice or have permission from the speaker to clone it.</span></label>
+        <button class="btn primary" id="addVoiceBtn">Add voice</button>
+        <p class="hint">Cloning a voice without permission is not allowed. Read the <a href="/legal/responsible-use" target="_blank" rel="noopener">Responsible use note</a>.</p>
+        <p class="hint">Best results: one speaker, no music or echo, natural speech at an even volume. You can also drop audio files straight into the <code>data/voices</code> folder.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAPTIONS -->
+  <div id="tab-captions" role="tabpanel" hidden>
+    <h1 class="page-title">Captions</h1>
+    <p class="lead">Turn any audio or video file into short, timed captions for your editor, as an SRT file plus a timestamp list. It works on voiceovers from this app and on recordings of your own.</p>
+    <div class="two">
+      <div>
+        <div class="drop" id="capDrop" tabindex="0" role="button" aria-label="Choose an audio or video file"><b id="capDropName">Choose or drop an audio or video file</b>WAV, MP3, M4A, FLAC, MP4, MOV, MKV and more</div>
+        <input type="file" id="capFile" accept="audio/*,video/*,.mkv" hidden>
+        <div id="capJob" class="job" hidden></div>
+      </div>
+      <div>
+        <h2>Caption settings</h2>
+        <div class="field"><label for="capLang">Language spoken</label><select id="capLang"></select></div>
+        <div id="capTab"></div>
+        <button class="btn primary" id="capGo" type="button">Make captions</button>
+        <p class="hint" id="capNote"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RENDERS -->
+  <div id="tab-renders" role="tabpanel" hidden>
+    <h1 class="page-title">Past renders</h1>
+    <p class="lead">Everything you render is saved on this computer.</p>
+    <div class="list" id="historyList"></div>
+  </div>
+
+  <!-- COMPUTER -->
+  <div id="tab-computer" role="tabpanel" hidden>
+    <h1 class="page-title">This computer</h1>
+    <p class="lead" id="advice"></p>
+    <div class="two">
+      <div>
+        <h2>Detected</h2>
+        <dl class="kv" id="sysInfo"></dl>
+        <h2>Modes</h2>
+        <div id="engineInfo"></div>
+        <h2 style="margin-top:30px">Use offline</h2>
+        <p class="hint" style="margin-top:0">After these voice models are on this computer, Voice Studio works with no internet. The installer already downloads Fast mode and Captions. Clone mode is several GB, so it is optional.</p>
+        <div id="offlineList"></div>
+        <div class="actions" style="margin-top:10px"><button class="btn" id="offlineBtn" type="button">Download selected for offline use</button></div>
+        <p class="hint" id="offlineMsg" role="status"></p>
+      </div>
+      <div>
+        <h2>Settings</h2>
+        <div class="field"><label for="setDevice">Processor to use</label><select id="setDevice"></select>
+          <p class="hint">Automatic picks the fastest one available. Switch to CPU if a GPU gives errors.</p></div>
+        <div class="field"><label for="setThreads">CPU threads</label><input type="number" id="setThreads" min="0" max="256">
+          <p class="hint">0 uses every core. Lower it if the computer feels sluggish while rendering.</p></div>
+        <div class="field"><label for="setFormat">Default file type</label>
+          <select id="setFormat"><option value="wav">WAV</option><option value="flac">FLAC</option><option value="mp3">MP3</option></select></div>
+        <div class="field"><label for="setTheme">Appearance</label>
+          <select id="setTheme"><option value="auto">Match my system</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+        <button class="btn primary" id="saveSettings">Save settings</button>
+        <h2 style="margin-top:30px">Open it like an app</h2>
+        <p class="hint" id="shortcutHint" style="margin-top:0"></p>
+        <div class="actions" style="margin-top:10px">
+          <button class="btn" id="shortcutBtn" type="button">Add desktop shortcut</button>
+          <button class="btn danger" id="quitBtn" type="button" hidden>Quit Voice Studio</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer class="foot" id="foot"></footer>
+
+<dialog id="termsDlg" aria-labelledby="termsTitle">
+  <h2 id="termsTitle">Before you start</h2>
+  <p>Voice Studio is free and open-source software. Please read this summary.</p>
+  <ul>
+    <li>It is provided <b>as is</b>, with no warranty. We are not liable for losses from using it, as far as the law allows.</li>
+    <li>Only clone a voice you have <b>permission</b> to use. Do not use it to deceive, defraud, harass or break the law.</li>
+    <li>Audio it makes is <b>marked as AI-generated</b>. Do not remove the marks.</li>
+    <li>Your scripts, voices and audio <b>stay on your computer</b>. We never see them.</li>
+  </ul>
+  <p>Read the full <a href="/legal/terms" target="_blank" rel="noopener">Terms of Use</a>, the <a href="/legal/privacy" target="_blank" rel="noopener">Privacy Notice</a> and the <a href="/legal/responsible-use" target="_blank" rel="noopener">Responsible use note</a>.</p>
+  <label class="check"><input type="checkbox" id="termsCheck"><span>I am old enough to agree (18 or the age of majority where I live), and I have read and agree to the Terms of Use.</span></label>
+  <div class="actions"><button class="btn primary" id="termsAccept" type="button" disabled>Accept and continue</button><button class="btn" id="termsDecline" type="button">Decline</button></div>
+  <p class="hint" id="termsMsg" role="status"></p>
+</dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const api = async (path, opts = {}) => {
+  const res = await fetch(path, opts);
+  if (!res.ok) {
+    let msg = `Request failed (${res.status}).`;
+    try { const j = await res.json(); if (j.detail) msg = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail); } catch {}
+    if (res.status === 403 && /Terms of Use/.test(msg) && $('termsDlg')) openTerms();
+    throw new Error(msg);
+  }
+  return res.json();
+};
+const json = (method, body) => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+function h(tag, attrs = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') el.className = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (k.startsWith('aria-')) el.setAttribute(k, String(v));   // aria-checked="true" / "false" must be real strings
+    else if (v !== false && v != null) el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null) el.append(kid.nodeType ? kid : document.createTextNode(kid));
+  return el;
+}
+function toast(msg) {
+  const t = h('div', { class: 'toast', role: 'status' }, msg);
+  document.body.append(t); setTimeout(() => t.remove(), 4200);
+}
+const playSvg = () => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 12 12'); s.innerHTML = '<path d="M2 1l9 5-9 5z"/>'; return s; };
+const fmtTime = (s) => { s = Math.round(s); const m = Math.floor(s / 60); return m ? `${m}m ${s % 60}s` : `${s}s`; };
+
+const MAX_CHARS = 200000;
+const ACTIVE = ['queued', 'loading_model', 'running', 'captioning'];
+const state = {
+  cap: { model: 'base', max_width: 18, max_lines: 1 }, capInfo: null, capJob: null,
+  system: null, engines: [], voices: { stock: [], custom: [] }, settings: {},
+  engine: null, voice: null, params: {}, lang: {}, activeJob: null, poll: null,
+};
+const saved = JSON.parse(localStorage.getItem('vs-prefs') || '{}');
+const savePrefs = () => localStorage.setItem('vs-prefs', JSON.stringify({
+  engine: state.engine, voice: state.voice, params: state.params, lang: state.lang,
+  pause: $('pause').value, ppause: $('ppause').value, format: $('format').value, script: $('script').value,
+  cap: state.cap, capOn: $('capOn').checked,
+}));
+
+/* ---------- Terms of Use ---------- */
+function openTerms() {
+  const dlg = $('termsDlg');
+  if (dlg.open) return;
+  $('termsCheck').checked = false; $('termsAccept').disabled = true; $('termsMsg').textContent = '';
+  dlg.showModal();
+}
+$('termsDlg').addEventListener('cancel', e => e.preventDefault());   // it cannot be dismissed with Escape
+$('termsCheck').addEventListener('change', () => { $('termsAccept').disabled = !$('termsCheck').checked; });
+$('termsAccept').addEventListener('click', async () => {
+  try {
+    await fetch('/api/terms/accept', json('POST', { version: state.system.terms.version })).then(async r => { if (!r.ok) throw new Error((await r.json()).detail || 'Could not save your choice.'); });
+    state.system.terms.accepted = true; $('termsDlg').close();
+  } catch (err) { $('termsMsg').textContent = err.message; }
+});
+$('termsDecline').addEventListener('click', async () => {
+  if (state.system.quit_allowed) { try { await api('/api/quit', { method: 'POST' }); } catch {} }
+  $('termsMsg').textContent = 'You need to accept the Terms of Use to use Voice Studio. You can close this window.';
+});
+
+/* ---------- footer ---------- */
+function renderFooter() {
+  const b = state.system.branding || {};
+  const bits = [`Voice Studio ${state.system.version}`, 'Free and open source (Apache-2.0)'];
+  const foot = $('foot'); foot.replaceChildren();
+  const link = (text, href) => h('a', { href, target: '_blank', rel: 'noopener' }, text);
+  foot.append(bits.join(' · '));
+  if (b.company) { foot.append(' · Built by ', b.company_url ? link(b.company, b.company_url) : b.company); }
+  if (b.repo) { foot.append(' · ', link('Source code', `https://github.com/${b.repo}`)); }
+  foot.append(h('div', { style: 'margin-top:6px' }, link('Terms of Use', '/legal/terms'), ' · ', link('Privacy', '/legal/privacy'), ' · ',
+    link('Responsible use', '/legal/responsible-use'), ' · ', link('Licenses', '/legal/licenses')));
+}
+
+/* ---------- tabs ---------- */
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === name));
+  document.querySelectorAll('[role=tabpanel]').forEach(p => p.hidden = p.id !== 'tab-' + name);
+  if (name === 'renders') loadHistory();
+  if (name === 'voices') renderVoicePage();
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+
+/* ---------- loading ---------- */
+async function refreshVoices() { state.voices = await api('/api/voices'); }
+async function init() {
+  [state.system, state.engines, state.settings, state.capInfo] = await Promise.all([api('/api/system'), api('/api/engines'), api('/api/settings'), api('/api/captions/info')]);
+  await refreshVoices();
+
+  const usable = state.engines.filter(e => e.available);
+  const want = (state.settings.default_engine !== 'auto' && state.settings.default_engine) || saved.engine || state.system.recommended_engine;
+  state.engine = (usable.find(e => e.id === want) || usable[0] || state.engines[0] || {}).id;
+  state.params = saved.params || {};
+  state.lang = saved.lang || {};
+  state.voice = saved.voice || null;
+
+  $('pause').value = saved.pause ?? 250; $('ppause').value = saved.ppause ?? 700;
+  $('format').value = saved.format || state.settings.output_format || 'wav';
+  $('script').value = saved.script || '';
+  state.cap = { ...state.cap, ...(saved.cap || {}) };
+  initCaptions(saved.capOn);
+
+  const m = $('machine');
+  m.replaceChildren(h('span', { class: 'dot' + (state.system.tier === 'light' ? ' light' : '') }),
+    `${state.system.devices.find(d => d.id === state.system.best_device).label} · ${state.system.ram_gb} GB RAM`);
+
+  renderFooter(); if (!state.system.terms.accepted) openTerms(); renderAll(); renderComputerPage(); updateStats(); resumeActiveJob(); resumeCapJob();
+}
+
+function renderAll() { renderModes(); renderLangSelect(); renderVoiceList(); renderParams(); updateSliders(); updateRenderState(); }
+
+/* ---------- modes ---------- */
+const currentEngine = () => state.engines.find(e => e.id === state.engine);
+function renderModes() {
+  const box = $('modes'); box.replaceChildren();
+  for (const e of state.engines) {
+    const rec = e.id === state.system.recommended_engine;
+    box.append(h('button', {
+      class: 'mode', role: 'radio', 'aria-checked': e.id === state.engine, disabled: !e.available,
+      onclick: () => { state.engine = e.id; state.voice = null; renderAll(); savePrefs(); },
+    }, h('b', {}, e.name, h('span', { class: 'badge' + (e.available ? '' : ' off'), style: 'margin:0' }, e.available ? (rec ? 'Recommended here' : '') : 'Not installed')),
+       h('span', {}, e.tagline)));
+  }
+  const e = currentEngine();
+  $('modeHint').textContent = e ? (e.supports_cloning
+    ? 'Clone mode needs a voice sample, or you can use its default voice. On a CPU each part can take a while.'
+    : 'Fast mode uses the built-in voices. It does not copy voices.') : '';
+}
+
+/* ---------- language ---------- */
+const currentLang = () => {
+  const e = currentEngine(); if (!e || !e.languages.length) return 'en';
+  const want = state.lang[e.id];
+  return e.languages.some(l => l.code === want) ? want : (e.languages.find(l => l.code === 'en') || e.languages[0]).code;
+};
+function renderLangSelect() {
+  const e = currentEngine(); const sel = $('lang'); sel.replaceChildren();
+  $('langBox').hidden = !e || e.languages.length < 2;
+  if (!e) return;
+  for (const l of e.languages) sel.append(h('option', { value: l.code }, l.name));
+  sel.value = currentLang();
+}
+$('lang').addEventListener('change', () => {
+  const e = currentEngine(); state.lang[e.id] = $('lang').value;
+  if (!e.language_param) state.voice = null;   // Fast mode: the voice decides the language
+  renderVoiceList(); updateRenderState(); savePrefs();
+});
+const jobOptions = () => {
+  const e = currentEngine();
+  return { ...state.params, ...(e && e.language_param ? { [e.language_param]: currentLang() } : {}) };
+};
+
+/* ---------- voices ---------- */
+let previewAudio = null;
+const previewCache = {};
+function setNote(text, bad = false) {
+  const n = $('previewNote'); n.hidden = !text; n.textContent = text || ''; n.className = 'hint' + (bad ? ' bad' : '');
+}
+async function preview(engine, voiceId, btn) {
+  if (btn && btn.classList.contains('busy')) return;
+  try {
+    if (previewAudio) { previewAudio.pause(); previewAudio = null; }
+    const options = engine === state.engine ? jobOptions() : state.params;
+    const key = [engine, voiceId, JSON.stringify(options)].join('|');
+    let url = previewCache[key];
+    if (!url) {
+      btn && btn.classList.add('busy');
+      setNote('Preparing the preview…');
+      const job = await api('/api/jobs', json('POST', { engine, voice: voiceId, options, preview: true, format: 'wav' }));
+      let j = job;
+      while (!['done', 'error', 'cancelled'].includes(j.status)) {
+        setNote(j.message || 'Preparing the preview…');
+        await new Promise(r => setTimeout(r, 700)); j = await api('/api/jobs/' + job.id);
+      }
+      if (j.status !== 'done') throw new Error(j.error || 'The preview could not be made.');
+      url = previewCache[key] = `/api/jobs/${job.id}/audio`;
+    }
+    setNote('');
+    previewAudio = new Audio(url);
+    await previewAudio.play();
+  } catch (err) { setNote(err.message, true); }
+  finally { btn && btn.classList.remove('busy'); }
+}
+function voiceRow(v, engineId, selectable) {
+  const row = h('div', {
+    class: 'voice', role: 'radio', tabindex: 0, 'aria-checked': state.voice === v.id,
+    onclick: () => { state.voice = v.id; renderVoiceList(); updateRenderState(); savePrefs(); },
+    onkeydown: (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); row.click(); } },
+  }, h('span', { class: 'nm' }, v.name), v.seconds ? h('span', { class: 'sub' }, `${v.seconds}s sample`) : null);
+  const b = h('button', { class: 'icon', 'aria-label': 'Hear ' + v.name, title: 'Hear a preview',
+    onclick: (ev) => { ev.stopPropagation(); preview(engineId, v.id, b); } }, playSvg());
+  row.append(b);
+  return row;
+}
+function renderVoiceList() {
+  const e = currentEngine(); const box = $('voiceList'); box.replaceChildren();
+  if (!e) return;
+  const lang = currentLang();
+  const stock = state.voices.stock.filter(v => v.engine === e.id && (e.language_param || !v.lang || v.lang === lang));
+  const custom = e.supports_cloning ? state.voices.custom : [];
+  const all = [...custom, ...stock];
+  if (!all.some(v => v.id === state.voice)) state.voice = (stock[0] || custom[0] || {}).id || null;
+  if (custom.length) { box.append(h('div', { class: 'voice-group' }, 'Your voices'), ...custom.map(v => voiceRow(v, e.id))); }
+  if (e.supports_cloning && !custom.length) box.append(h('div', { class: 'empty' }, 'No voices of your own yet. Add one in the Voices tab to clone it.'));
+  box.append(h('div', { class: 'voice-group' }, 'Built-in voices'), ...stock.map(v => voiceRow(v, e.id)));
+}
+
+/* ---------- engine options ---------- */
+function renderParams() {
+  const e = currentEngine(); const box = $('engineParams'); box.replaceChildren();
+  if (!e) return;
+  for (const p of e.params) {
+    const val = state.params[p.key] ?? p.default;
+    const out = h('output', {}, String(val));
+    const input = h('input', { type: 'range', id: 'p-' + p.key, min: p.min, max: p.max, step: p.step, value: val,
+      oninput: () => { state.params[p.key] = parseFloat(input.value); out.textContent = input.value; savePrefs(); } });
+    box.append(h('div', { class: 'field' }, h('label', { for: 'p-' + p.key }, p.label, out), input));
+  }
+}
+function updateSliders() {
+  $('pauseOut').textContent = ($('pause').value / 1000).toFixed(2) + 's';
+  $('ppauseOut').textContent = ($('ppause').value / 1000).toFixed(1) + 's';
+}
+['pause', 'ppause'].forEach(id => $(id).addEventListener('input', () => { updateSliders(); savePrefs(); }));
+$('format').addEventListener('change', savePrefs);
+
+/* ---------- script stats ---------- */
+function updateStats() {
+  const text = $('script').value.trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  $('stats').textContent = `${words.toLocaleString()} word${words === 1 ? '' : 's'} · ${text.length.toLocaleString()} characters`;
+  $('estimate').textContent = words ? `About ${fmtTime(words / 150 * 60)} of audio` : '';
+  if (text.length > MAX_CHARS) { $('stats').append(h('span', { class: 'over-limit' }, ` · over the ${MAX_CHARS.toLocaleString()} character limit, split it into parts`)); }
+  updateRenderState();
+}
+$('script').addEventListener('input', () => { updateStats(); savePrefs(); });
+
+function updateRenderState() {
+  const busy = state.activeJob && ACTIVE.includes(state.activeJob.status);
+  const ready = $('script').value.trim() && $('script').value.length <= MAX_CHARS && state.voice && currentEngine()?.available;
+  $('renderBtn').disabled = !ready || busy;
+  $('renderBtn').textContent = busy ? 'Rendering…' : 'Render voiceover';
+  const e = currentEngine();
+  $('renderHint').textContent = !e ? '' : !e.available ? e.unavailable_reason
+    : (!$('script').value.trim() ? 'Write or paste a script to begin.' : '');
+}
+
+/* ---------- import a script file ---------- */
+async function importFile(file) {
+  if (!file) return;
+  if (!/\.(txt|md|docx)$/i.test(file.name)) {
+    return toast(/\.doc$/i.test(file.name) ? 'Old .doc files are not supported. In Word choose Save As .docx.' : 'Use a .txt, .md or .docx file.');
+  }
+  try {
+    const fd = new FormData(); fd.append('file', file);
+    const res = await api('/api/import', { method: 'POST', body: fd });
+    const box = $('script');
+    if (box.value.trim() && !confirm(`Replace your current script with "${res.name}"?\n\nOK replaces it. Cancel keeps your text and adds the file at the end.`)) {
+      box.value = box.value.trimEnd() + '\n\n' + res.text;
+    } else { box.value = res.text; }
+    showTab('studio'); updateStats(); savePrefs(); toast(`Loaded "${res.name}".`);
+  } catch (err) { toast(err.message); }
+}
+$('openFile').addEventListener('click', () => $('scriptFile').click());
+$('scriptFile').addEventListener('change', () => { importFile($('scriptFile').files[0]); $('scriptFile').value = ''; });
+const sheet = document.querySelector('.sheet');
+['dragenter', 'dragover'].forEach(ev => sheet.addEventListener(ev, e => { e.preventDefault(); sheet.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => sheet.addEventListener(ev, e => { e.preventDefault(); sheet.classList.remove('over'); }));
+sheet.addEventListener('drop', e => importFile(e.dataTransfer.files[0]));
+// a file dropped anywhere else should never navigate the window away from the app
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
+
+/* ---------- rendering ---------- */
+$('renderBtn').addEventListener('click', async () => {
+  try {
+    const job = await api('/api/jobs', json('POST', {
+      text: $('script').value, engine: state.engine, voice: state.voice, options: jobOptions(),
+      format: $('format').value, pause_ms: +$('pause').value, paragraph_pause_ms: +$('ppause').value,
+      captions: $('capOn').checked && state.capInfo.available ? { ...state.cap } : null,
+    }));
+    state.activeJob = job; localStorage.setItem('vs-job', job.id);
+    drawJob(job, $('job')); watchJob('activeJob', 'job');
+  } catch (err) { toast(err.message); }
+});
+
+const pollers = {};
+function watchJob(key, boxId) {
+  clearInterval(pollers[key]);
+  pollers[key] = setInterval(async () => {
+    try {
+      state[key] = await api('/api/jobs/' + state[key].id);
+      drawJob(state[key], $(boxId));
+      if (!ACTIVE.includes(state[key].status)) { clearInterval(pollers[key]); loadHistory(); updateCapGo(); }
+    } catch { clearInterval(pollers[key]); }
+  }, 700);
+}
+async function resumeActiveJob() {
+  const id = localStorage.getItem('vs-job');
+  if (!id) return;
+  try { state.activeJob = await api('/api/jobs/' + id); drawJob(state.activeJob, $('job')); if (ACTIVE.includes(state.activeJob.status)) watchJob('activeJob', 'job'); }
+  catch { localStorage.removeItem('vs-job'); }
+}
+async function resumeCapJob() {
+  const id = localStorage.getItem('vs-capjob');
+  if (!id) return;
+  try { state.capJob = await api('/api/jobs/' + id); drawJob(state.capJob, $('capJob')); if (ACTIVE.includes(state.capJob.status)) watchJob('capJob', 'capJob'); }
+  catch { localStorage.removeItem('vs-capjob'); }
+}
+
+async function recaption(job, key, boxId) {
+  try {
+    state[key] = await api(`/api/jobs/${job.id}/captions`, json('POST', { ...state.cap }));
+    drawJob(state[key], $(boxId)); watchJob(key, boxId);
+  } catch (err) { toast(err.message); }
+}
+
+function drawJob(j, box) {
+  if (!j) { box.hidden = true; return; }
+  const key = box.id === 'capJob' ? 'capJob' : 'activeJob';
+  const capOnly = j.task === 'captions' && !j.file;
+  box.hidden = false; box.replaceChildren();
+  const active = ACTIVE.includes(j.status);
+  const total = j.chunks_total || 1;
+  const strip = h('div', { class: 'strip' + (active ? ' pulse' : ''), 'aria-hidden': true });
+  const segs = Math.min(total, 120);
+  const filled = Math.floor((j.chunks_done / total) * segs);
+  for (let i = 0; i < segs; i++) strip.append(h('i', { class: i < filled ? 'on' : '' }));
+
+  const titles = capOnly
+    ? { queued: 'Waiting in line', loading_model: 'Getting ready', running: 'Working', captioning: 'Making captions', done: 'Your captions are ready', error: 'Captions failed', cancelled: 'Cancelled' }
+    : { queued: 'Waiting in line', loading_model: 'Getting the voice model ready', running: 'Rendering', captioning: 'Making captions', done: 'Your voiceover is ready', error: 'Render failed', cancelled: 'Render cancelled' };
+  box.append(h('div', { class: 'job-head' }, h('h2', {}, titles[j.status]),
+    h('span', { class: 'hint', style: 'margin:0' }, capOnly ? j.voice_name : `${j.voice_name} · ${j.chunks_done} of ${j.chunks_total} parts`)));
+  box.append(h('p', {}, j.status === 'running' && j.eta_seconds ? `${j.message} About ${fmtTime(j.eta_seconds)} left.` : j.message));
+  if (j.status !== 'error') box.append(strip);
+  if (j.error) box.append(h('div', { class: 'error', role: 'alert' }, j.error));
+  if (active && !capOnly && j.status !== 'captioning') box.append(h('div', { class: 'actions' }, h('button', { class: 'btn', onclick: () => api(`/api/jobs/${j.id}/cancel`, { method: 'POST' }) }, 'Cancel')));
+  if (j.status === 'done') {
+    const links = [];
+    if (j.file) {
+      box.append(h('audio', { controls: true, src: `/api/jobs/${j.id}/audio` }));
+      links.push(h('a', { class: 'btn', href: `/api/jobs/${j.id}/audio?download=true` }, `Download ${j.file.split('.').pop().toUpperCase()}`));
+    }
+    if (j.cap_srt) {
+      links.push(h('a', { class: 'btn', href: `/api/jobs/${j.id}/caption-file/srt` }, 'Short captions (SRT)'),
+                 h('a', { class: 'btn', href: `/api/jobs/${j.id}/caption-file/txt` }, 'Timestamps (TXT)'));
+    }
+    if (j.srt) links.push(h('a', { class: 'btn', href: `/api/jobs/${j.id}/srt` }, 'Sentence captions (SRT)'));
+    if (j.file && !j.cap_srt && state.capInfo && state.capInfo.available) {
+      links.push(h('button', { class: 'btn', type: 'button', onclick: () => recaption(j, key, box.id) }, 'Make short captions'));
+    }
+    box.append(h('div', { class: 'actions' }, ...links));
+    if (j.cap_error) box.append(h('div', { class: 'error', role: 'alert' }, 'Captions could not be made: ' + j.cap_error));
+    const notes = [];
+    if (j.file) notes.push(`${fmtTime(j.duration)} of audio, rendered in ${fmtTime(j.render_seconds)}.`);
+    if (j.cap_cues) notes.push(`${j.cap_cues} captions. Whisper writes what it hears, so check names and numbers against your script.`);
+    if (notes.length) box.append(h('p', { class: 'hint' }, notes.join(' ')));
+  }
+  updateRenderState();
+}
+
+/* ---------- captions: settings, tab ---------- */
+const capSets = [];
+function syncCap() {
+  for (const c of capSets) {
+    c.model.value = state.cap.model; c.width.value = state.cap.max_width;
+    c.out.textContent = state.cap.max_width; c.lines.value = String(state.cap.max_lines);
+  }
+}
+function buildCapControls(box, prefix) {
+  const model = h('select', { id: prefix + '-model' }, ...state.capInfo.models.map(m => h('option', { value: m.id }, m.name)));
+  const out = h('output', {}, '');
+  const width = h('input', { type: 'range', id: prefix + '-width', min: 8, max: 60, step: 1 });
+  const lines = h('select', { id: prefix + '-lines' }, h('option', { value: '1' }, '1 line'), h('option', { value: '2' }, '2 lines'));
+  const preset = (label, w, l) => h('button', { class: 'btn small', type: 'button',
+    onclick: () => { state.cap.max_width = w; state.cap.max_lines = l; syncCap(); savePrefs(); } }, label);
+  capSets.push({ model, width, lines, out });
+  model.addEventListener('change', () => { state.cap.model = model.value; syncCap(); savePrefs(); });
+  width.addEventListener('input', () => { state.cap.max_width = +width.value; syncCap(); savePrefs(); });
+  lines.addEventListener('change', () => { state.cap.max_lines = +lines.value; syncCap(); savePrefs(); });
+  box.replaceChildren(
+    h('div', { class: 'field' }, h('label', { for: prefix + '-model' }, 'Caption accuracy'), model),
+    h('div', { class: 'field' }, h('label', { for: prefix + '-width' }, 'Characters per line', out), width,
+      h('div', { class: 'actions', style: 'margin-top:8px' }, preset('Short-form (18, 1 line)', 18, 1), preset('Standard (42, 2 lines)', 42, 2))),
+    h('div', { class: 'field' }, h('label', { for: prefix + '-lines' }, 'Lines per caption'), lines));
+}
+function initCaptions(capOn) {
+  const info = state.capInfo;
+  buildCapControls($('capStudio'), 'cs'); buildCapControls($('capTab'), 'ct'); syncCap();
+  $('capLang').replaceChildren(h('option', { value: '' }, 'Detect automatically'), ...info.languages.map(l => h('option', { value: l.code }, l.name)));
+  if (!info.available) {
+    $('capOn').disabled = true; $('capGo').disabled = true;
+    for (const id of ['capStudioNote', 'capNote']) { $(id).hidden = false; $(id).textContent = info.reason; }
+  }
+  $('capOn').checked = !!capOn && info.available;
+  $('capStudio').hidden = !$('capOn').checked;
+  $('capOn').addEventListener('change', () => { $('capStudio').hidden = !$('capOn').checked; savePrefs(); });
+  if (info.available) $('capNote').textContent = 'The first time, the caption model downloads once, then it works offline.';
+  updateCapGo();
+}
+function updateCapGo() {
+  const busy = state.capJob && ACTIVE.includes(state.capJob.status);
+  $('capGo').disabled = !state.capInfo.available || !$('capFile').files[0] || busy;
+}
+const capDrop = $('capDrop'), capFile = $('capFile');
+capDrop.addEventListener('click', () => capFile.click());
+capDrop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); capFile.click(); } });
+['dragover', 'dragenter'].forEach(ev => capDrop.addEventListener(ev, e => { e.preventDefault(); capDrop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => capDrop.addEventListener(ev, e => { e.preventDefault(); capDrop.classList.remove('over'); }));
+capDrop.addEventListener('drop', e => { if (e.dataTransfer.files[0]) { capFile.files = e.dataTransfer.files; capFile.dispatchEvent(new Event('change')); } });
+capFile.addEventListener('change', () => { const f = capFile.files[0]; if (f) $('capDropName').textContent = f.name; updateCapGo(); });
+$('capGo').addEventListener('click', async () => {
+  const f = capFile.files[0]; if (!f) return;
+  const fd = new FormData();
+  fd.append('file', f); fd.append('model', state.cap.model); fd.append('max_width', state.cap.max_width);
+  fd.append('max_lines', state.cap.max_lines); fd.append('language', $('capLang').value);
+  $('capGo').disabled = true;
+  try {
+    state.capJob = await api('/api/captions', { method: 'POST', body: fd });
+    localStorage.setItem('vs-capjob', state.capJob.id);
+    drawJob(state.capJob, $('capJob')); watchJob('capJob', 'capJob');
+  } catch (err) { toast(err.message); updateCapGo(); }
+});
+
+/* ---------- voices page ---------- */
+function renderVoicePage() {
+  const cl = $('customList'); cl.replaceChildren();
+  if (!state.voices.custom.length) cl.append(h('div', { class: 'empty' }, 'Nothing here yet. Add a recording on the right to start your library.'));
+  for (const v of state.voices.custom) {
+    const b = h('button', { class: 'icon', 'aria-label': 'Hear the sample for ' + v.name, onclick: () => { new Audio(`/api/voices/${v.id}/audio`).play(); } }, playSvg());
+    cl.append(h('div', { class: 'item' }, b,
+      h('div', { class: 'grow' }, h('div', { class: 't' }, v.name), h('div', { class: 's' }, `${v.seconds}s sample${v.short_sample ? ' · a longer sample usually sounds better' : ''}`)),
+      h('button', { class: 'btn small', onclick: async () => {
+        const name = prompt('Rename voice', v.name);
+        if (name) { await api('/api/voices/' + v.id, json('PATCH', { name })); await refreshVoices(); renderVoicePage(); renderVoiceList(); }
+      } }, 'Rename'),
+      h('button', { class: 'btn small danger', onclick: async () => {
+        if (!confirm(`Delete "${v.name}"? This cannot be undone.`)) return;
+        await api('/api/voices/' + v.id, { method: 'DELETE' }); await refreshVoices(); renderVoicePage(); renderVoiceList();
+      } }, 'Delete')));
+  }
+  const sl = $('stockList'); sl.replaceChildren();
+  for (const v of state.voices.stock) {
+    const eng = state.engines.find(e => e.id === v.engine);
+    const b = h('button', { class: 'icon', 'aria-label': 'Hear ' + v.name, onclick: () => preview(v.engine, v.id, b) }, playSvg());
+    sl.append(h('div', { class: 'item' }, b, h('div', { class: 'grow' }, h('div', { class: 't' }, v.name), h('div', { class: 's' }, eng ? eng.name + ' mode' + (v.lang ? ' · ' + ((eng.languages.find(l => l.code === v.lang) || {}).name || v.lang) : '') : ''))));
+  }
+}
+const drop = $('drop'), fileIn = $('voiceFile');
+drop.addEventListener('click', () => fileIn.click());
+drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileIn.click(); } });
+['dragover', 'dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => { if (e.dataTransfer.files[0]) { fileIn.files = e.dataTransfer.files; fileIn.dispatchEvent(new Event('change')); } });
+fileIn.addEventListener('change', () => {
+  const f = fileIn.files[0]; if (!f) return;
+  $('dropName').textContent = f.name;
+  if (!$('voiceName').value) $('voiceName').value = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+});
+$('addVoiceBtn').addEventListener('click', async () => {
+  const f = fileIn.files[0];
+  if (!f) return toast('Choose an audio file first.');
+  if (!$('voiceName').value.trim()) return toast('Give the voice a name.');
+  const fd = new FormData();
+  fd.append('name', $('voiceName').value); fd.append('consent', $('consent').checked); fd.append('file', f);
+  $('addVoiceBtn').disabled = true;
+  try {
+    const v = await api('/api/voices', { method: 'POST', body: fd });
+    toast(`Added "${v.name}".`);
+    fileIn.value = ''; $('voiceName').value = ''; $('consent').checked = false; $('dropName').textContent = 'Choose or drop an audio file';
+    await refreshVoices(); renderVoicePage(); renderVoiceList();
+  } catch (err) { toast(err.message); }
+  finally { $('addVoiceBtn').disabled = false; }
+});
+
+/* ---------- history ---------- */
+async function loadHistory() {
+  const list = $('historyList');
+  try {
+    const jobs = await api('/api/jobs'); list.replaceChildren();
+    if (!jobs.length) list.append(h('div', { class: 'empty' }, 'No renders yet. Write a script in the Studio tab and press Render voiceover.'));
+    for (const j of jobs) {
+      const when = new Date(j.created * 1000).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+      const capOnly = j.task === 'captions' && !j.file;
+      const done = j.status === 'done';
+      const status = done
+        ? (capOnly ? `${j.cap_cues || 0} captions` : `${fmtTime(j.duration)} · ${j.file.split('.').pop().toUpperCase()}${j.cap_cues ? ' · ' + j.cap_cues + ' captions' : ''}`)
+        : j.status === 'error' ? 'Failed' : j.status === 'cancelled' ? 'Cancelled' : 'In progress';
+      list.append(h('div', { class: 'item' },
+        h('div', { class: 'grow' }, h('div', { class: 'ex' }, j.excerpt), h('div', { class: 's' }, `${j.voice_name} · ${when} · ${status}`),
+          done && j.file ? h('audio', { controls: true, preload: 'none', src: `/api/jobs/${j.id}/audio`, style: 'width:100%;margin-top:8px' }) : null),
+        done && j.file ? h('a', { class: 'btn small', href: `/api/jobs/${j.id}/audio?download=true` }, 'Download') : null,
+        done && j.srt ? h('a', { class: 'btn small', href: `/api/jobs/${j.id}/srt` }, 'SRT') : null,
+        done && j.cap_srt ? h('a', { class: 'btn small', href: `/api/jobs/${j.id}/caption-file/srt` }, 'Short SRT') : null,
+        done && j.cap_txt ? h('a', { class: 'btn small', href: `/api/jobs/${j.id}/caption-file/txt` }, 'TXT') : null,
+        h('button', { class: 'btn small danger', onclick: async () => { await api('/api/jobs/' + j.id, { method: 'DELETE' }); loadHistory(); } }, 'Delete')));
+    }
+  } catch (err) { toast(err.message); }
+}
+
+/* ---------- this computer ---------- */
+function renderComputerPage() {
+  const s = state.system;
+  $('advice').textContent = s.advice;
+  const rows = [['System', `${s.os} (${s.arch})`], ['Memory', `${s.ram_gb} GB`], ['CPU cores', s.cores],
+    ['Processors', s.devices.map(d => d.label).join(', ')], ['Running in', s.in_docker ? 'Docker' : 'Directly on this computer']];
+  $('sysInfo').replaceChildren(...rows.flatMap(([k, v]) => [h('dt', {}, k), h('dd', {}, String(v))]));
+  $('engineInfo').replaceChildren(...state.engines.map(e => h('div', { class: 'eng' },
+    h('h3', {}, `${e.name} mode`), h('div', {}, e.tagline),
+    h('div', { class: 'hint' }, `License: ${e.license}`),
+    h('div', { class: 'hint' }, e.available ? (e.loaded ? `Loaded on ${e.device}.` : 'Ready. Loads when you first render.') : e.unavailable_reason))));
+  const dev = $('setDevice'); dev.replaceChildren(h('option', { value: 'auto' }, 'Automatic (recommended)'),
+    ...s.devices.map(d => h('option', { value: d.id }, d.label)));
+  dev.value = state.settings.device; $('setThreads').value = state.settings.cpu_threads; $('setFormat').value = state.settings.output_format;
+  $('setTheme').value = localStorage.getItem('vs-theme') || 'auto';
+  $('shortcutBtn').hidden = s.in_docker || s.installed;
+  $('shortcutHint').textContent = s.installed ? 'Voice Studio was installed with its own icon. Look for it on your desktop or in your app menu.'
+    : s.in_docker
+    ? 'You are running in Docker. Right-click docker-start.bat or docker-start.sh and create a shortcut to it.'
+    : 'Adds a Voice Studio icon to your desktop and app menu. It opens in its own window, and closing the window stops the app.';
+  $('quitBtn').hidden = !s.quit_allowed;
+  loadOffline();
+}
+/* ---------- offline packs ---------- */
+let offlinePoll = null;
+async function loadOffline() {
+  try {
+    const d = await api('/api/models');
+    const list = $('offlineList'); list.replaceChildren();
+    for (const p of d.packs) {
+      const box = h('input', { type: 'checkbox', id: 'pack-' + p.id, disabled: p.ready || d.running, checked: !p.ready && p.id !== 'clone' });
+      list.append(h('div', { class: 'eng' }, h('label', { class: 'check', for: 'pack-' + p.id, style: 'margin:0' }, box,
+        h('span', {}, h('b', {}, p.name), ' · ', p.ready ? 'Ready for offline use' : p.running ? 'Downloading…' : 'Not downloaded', h('br'), h('span', { class: 'hint' }, p.detail)))));
+    }
+    $('offlineBtn').disabled = d.running || d.packs.every(p => p.ready);
+    $('offlineMsg').textContent = d.error ? 'Could not finish: ' + d.error : d.message || '';
+    $('offlineMsg').className = 'hint' + (d.error ? ' bad' : '');
+    clearTimeout(offlinePoll);
+    if (d.running) offlinePoll = setTimeout(loadOffline, 1500);
+  } catch (err) { $('offlineMsg').textContent = err.message; }
+}
+$('offlineBtn').addEventListener('click', async () => {
+  const packs = [...document.querySelectorAll('#offlineList input:checked')].map(i => i.id.replace('pack-', ''));
+  if (!packs.length) return toast('Tick what you want to download.');
+  try { await api('/api/models/download', json('POST', { packs })); loadOffline(); } catch (err) { toast(err.message); }
+});
+
+$('shortcutBtn').addEventListener('click', async () => {
+  try {
+    const r = await api('/api/shortcut', { method: 'POST' });
+    toast(r.platform === 'Linux' ? 'Shortcut added. If it shows a warning icon, right-click it and choose Allow Launching.' : 'Shortcut added to your desktop and app menu.');
+  } catch (err) { toast(err.message); }
+});
+$('quitBtn').addEventListener('click', async () => {
+  if (!confirm('Quit Voice Studio? Any render in progress will stop.')) return;
+  try { await api('/api/quit', { method: 'POST' }); } catch {}
+  document.body.replaceChildren(h('main', {}, h('h1', { class: 'page-title' }, 'Voice Studio has stopped'), h('p', { class: 'lead' }, 'You can close this window.')));
+});
+$('saveSettings').addEventListener('click', async () => {
+  try {
+    state.settings = await api('/api/settings', json('PUT', {
+      device: $('setDevice').value, cpu_threads: parseInt($('setThreads').value || '0', 10), output_format: $('setFormat').value }));
+    const theme = $('setTheme').value;
+    theme === 'auto' ? (localStorage.removeItem('vs-theme'), document.documentElement.removeAttribute('data-theme')) : (localStorage.setItem('vs-theme', theme), document.documentElement.dataset.theme = theme);
+    state.engines = await api('/api/engines'); renderComputerPage(); toast('Settings saved.');
+  } catch (err) { toast(err.message); }
+});
+if (localStorage.getItem('vs-theme')) document.documentElement.dataset.theme = localStorage.getItem('vs-theme');
+
+init().catch(err => toast('Could not start: ' + err.message));
+</script>
+</body>
+</html>

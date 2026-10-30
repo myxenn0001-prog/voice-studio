@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Studio in your browser</title>
+<meta name="description" content="Make a voiceover right here, for free. The voice runs on your own device, so your text never leaves it.">
+<link rel="icon" href="../favicon.ico">
+<style>
+:root {
+  --bg: #ECEEF2; --sheet: #FFFFFF; --ink: #1B2330; --muted: #5B6677; --line: #D3D9E1;
+  --accent: #2447E8; --accent-ink: #FFFFFF; --accent-soft: #E2E8FD; --err: #B3261E; --err-soft: #FBE9E7; --ok: #17724E;
+  --ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Roboto, sans-serif;
+  --page: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #13171E; --sheet: #1B212A; --ink: #E7EBF1; --muted: #9AA5B5; --line: #2D3541;
+          --accent: #8499FF; --accent-ink: #0E1430; --accent-soft: #232C57; --err: #FF8A80; --err-soft: #3A1F1D; --ok: #5FD0A1; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--ui); }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; padding: 14px 28px; border-bottom: 1px solid var(--line); }
+.brand { font: 600 20px/1 var(--page); color: inherit; text-decoration: none; }
+header nav { margin-left: auto; display: flex; gap: 18px; font-weight: 600; }
+header nav a { text-decoration: none; }
+main { max-width: 1080px; margin: 0 auto; padding: 28px; }
+h1 { font: 600 30px/1.15 var(--page); margin: 0 0 8px; }
+.lead { color: var(--muted); margin: 0 0 22px; max-width: 62ch; }
+.grid { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 36px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; gap: 24px; } main { padding: 18px; } header { padding: 12px 18px; } }
+.sheet { background: var(--sheet); border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 18px 40px -28px rgba(20,30,50,.35); }
+.sheet.over { outline: 2px dashed var(--accent); outline-offset: -10px; }
+textarea { display: block; width: 100%; min-height: 340px; resize: vertical; border: 0; background: transparent; padding: 30px 34px; font: 18px/1.7 var(--page); color: inherit; outline: none; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; padding: 10px 34px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+.link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; font-weight: 600; }
+h2 { font: 600 15px/1.3 var(--ui); margin: 0 0 8px; }
+.side > section { padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
+.side > section:last-child { border: 0; }
+label { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
+select { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--sheet); color: inherit; font: inherit; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.btn { border: 1px solid var(--line); background: transparent; color: inherit; border-radius: 6px; padding: 8px 14px; cursor: pointer; font: inherit; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); width: 100%; padding: 13px; font-size: 16px; }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+.note { background: var(--accent-soft); border-radius: 6px; padding: 10px 12px; font-size: 14px; margin: 0 0 20px; }
+.status { margin-top: 26px; border-top: 2px solid var(--ink); padding-top: 14px; }
+.status h2 { font-size: 16px; }
+.strip { height: 22px; margin: 10px 0 6px; background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 8px); }
+.strip > div { height: 100%; width: 0; background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 8px); transition: width .3s; }
+@media (prefers-reduced-motion: reduce) { .strip > div { transition: none; } }
+audio { width: 100%; margin: 8px 0 12px; }
+.err { background: var(--err-soft); color: var(--err); border-radius: 6px; padding: 10px 12px; margin-top: 8px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.more { margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--muted); max-width: 70ch; }
+.more b { color: var(--ink); }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="../">Voice Studio</a>
+  <nav><a href="../">Get the free app</a><a id="srcLink" href="https://github.com/myxenn0001-prog/voice-studio">Source code</a></nav>
+</header>
+<main>
+  <h1>Make a voiceover in your browser</h1>
+  <p class="lead">Free, with no account. The voice runs on your own device, so your text is never uploaded.</p>
+  <p class="note">The first time, your browser downloads the voice model once (it is cached after that). Chrome or Edge on a computer works best. A long script can make the page feel slow while it renders.</p>
+
+  <div class="grid">
+    <div>
+      <div class="sheet" id="sheet">
+        <textarea id="script" dir="auto" aria-label="Script" placeholder="Paste or write your script here, or drop a .txt file onto this box. Leave a blank line between paragraphs for a longer pause."></textarea>
+        <div class="foot"><span id="stats">0 words</span><button class="link" id="openFile" type="button">Open a .txt file</button><span id="limit">Up to 5,000 characters</span></div>
+        <input type="file" id="file" accept=".txt,.md,text/plain" hidden>
+      </div>
+      <div class="status" id="status" hidden role="status" aria-live="polite">
+        <h2 id="statusTitle"></h2>
+        <p class="hint" id="statusMsg" style="margin:0"></p>
+        <div class="strip" id="strip" aria-hidden="true"><div id="bar"></div></div>
+        <div id="result" hidden>
+          <audio id="player" controls></audio>
+          <div class="actions"><a class="btn" id="download" download="voiceover.wav">Download WAV</a></div>
+        </div>
+        <div class="err" id="error" hidden role="alert"></div>
+        <div class="actions" style="margin-top:10px"><button class="btn" id="cancel" type="button" hidden>Cancel</button></div>
+      </div>
+    </div>
+
+    <div class="side">
+      <section>
+        <h2>Voice</h2>
+        <select id="voice" aria-label="Voice"></select>
+        <p class="hint" id="voiceHint">English voices work best.</p>
+      </section>
+      <section>
+        <label for="speed">Speaking speed <output id="speedOut">1.0</output></label>
+        <input type="range" id="speed" min="0.6" max="1.4" step="0.05" value="1">
+      </section>
+      <section>
+        <button class="btn primary" id="go" type="button">Make voiceover</button>
+        <p class="hint" id="goHint"></p>
+      </section>
+    </div>
+  </div>
+
+  <div class="more">
+    <p><b>Want more?</b> The free desktop app also has voice cloning from a short sample, 23 languages, short captions for video editors, Word and text import, and no size limits. <a href="../">Download it</a>.</p>
+    <p>This page uses the open-source <a href="https://www.npmjs.com/package/kokoro-js">kokoro-js</a> library and the Kokoro voice model (Apache-2.0). It is made by TechFlow. By using this page you agree to the <a href="../legal/terms.html">Terms of Use</a>; see the <a href="../legal/privacy.html">Privacy Notice</a> and the <a href="../legal/responsible-use.html">Responsible use note</a>. Voice output from this page is not watermarked, so please say when audio is AI-generated.</p>
+  </div>
+</main>
+
+<script type="module">
+const LIB = "https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm";
+const MODEL = "onnx-community/Kokoro-82M-v1.0-ONNX";
+const MAX_CHARS = 5000;
+const $ = (id) => document.getElementById(id);
+
+// English voices work best; they are listed up front so the page is usable before the model loads.
+const BUILTIN = {
+  "American English": { af_heart: "Heart (female)", af_bella: "Bella (female)", af_nicole: "Nicole (female)", af_sarah: "Sarah (female)",
+    af_sky: "Sky (female)", af_nova: "Nova (female)", af_aoede: "Aoede (female)", af_kore: "Kore (female)", af_jessica: "Jessica (female)",
+    af_river: "River (female)", am_adam: "Adam (male)", am_michael: "Michael (male)", am_eric: "Eric (male)", am_liam: "Liam (male)",
+    am_onyx: "Onyx (male)", am_fenrir: "Fenrir (male)", am_puck: "Puck (male)", am_echo: "Echo (male)" },
+  "British English": { bf_emma: "Emma (female)", bf_isabella: "Isabella (female)", bf_alice: "Alice (female)", bf_lily: "Lily (female)",
+    bm_george: "George (male)", bm_daniel: "Daniel (male)", bm_lewis: "Lewis (male)", bm_fable: "Fable (male)" },
+};
+const known = new Set(Object.values(BUILTIN).flatMap(g => Object.keys(g)));
+
+function fillVoices(extra) {
+  const sel = $("voice"), keep = sel.value;
+  sel.replaceChildren();
+  const add = (label, items) => {
+    const g = document.createElement("optgroup"); g.label = label;
+    for (const [id, name] of Object.entries(items)) { const o = document.createElement("option"); o.value = id; o.textContent = name; g.append(o); }
+    sel.append(g);
+  };
+  for (const [label, items] of Object.entries(BUILTIN)) add(label, items);
+  if (extra && Object.keys(extra).length) add("Other languages (experimental)", extra);
+  if (keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
+}
+fillVoices();
+
+// ---------------------------------------------------------------- text
+function makeChunks(text, max = 240) {
+  const out = [];
+  for (const para of text.replace(/\r\n/g, "\n").trim().split(/\n\s*\n+/)) {
+    const p = para.split(/\s+/).join(" ").trim();
+    if (!p) continue;
+    const sentences = p.split(/(?<=[.!?…।॥؟۔])\s+|(?<=[。！？])/).filter(Boolean);
+    const group = []; let buf = "";
+    for (let s of sentences) {
+      while (s.length > max) { // very long sentence: break at a space
+        let cut = s.lastIndexOf(" ", max); if (cut < 40) cut = max;
+        if (buf) { group.push(buf); buf = ""; }
+        group.push(s.slice(0, cut).trim()); s = s.slice(cut).trim();
+      }
+      if (buf && buf.length + s.length + 1 > max) { group.push(buf); buf = s; } else { buf = (buf + " " + s).trim(); }
+    }
+    if (buf) group.push(buf);
+    group.forEach((t, i) => out.push({ text: t, paragraphEnd: i === group.length - 1 }));
+  }
+  return out;
+}
+function encodeWav(samples, rate) {
+  const buf = new ArrayBuffer(44 + samples.length * 2), v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, "RIFF"); v.setUint32(4, 36 + samples.length * 2, true); w(8, "WAVE"); w(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, "data"); v.setUint32(40, samples.length * 2, true);
+  for (let i = 0; i < samples.length; i++) { const s = Math.max(-1, Math.min(1, samples[i])); v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true); }
+  return new Blob([buf], { type: "audio/wav" });
+}
+
+// ---------------------------------------------------------------- UI helpers
+function stats() {
+  const t = $("script").value.trim(), words = t ? t.split(/\s+/).length : 0, over = t.length > MAX_CHARS;
+  $("stats").textContent = `${words.toLocaleString()} word${words === 1 ? "" : "s"} · ${t.length.toLocaleString()} characters`;
+  $("limit").textContent = over ? `Over the ${MAX_CHARS.toLocaleString()} character limit` : `Up to ${MAX_CHARS.toLocaleString()} characters`;
+  $("limit").style.color = over ? "var(--err)" : "";
+  $("go").disabled = !t || over || busy;
+  $("goHint").textContent = !t ? "Write or paste a script to begin." : "";
+}
+function show(title, msg, pct) {
+  $("status").hidden = false; $("statusTitle").textContent = title; $("statusMsg").textContent = msg || "";
+  if (pct != null) $("bar").style.width = Math.round(pct * 100) + "%";
+}
+function fail(message) {
+  $("status").hidden = false; $("statusTitle").textContent = "Something went wrong";
+  $("error").hidden = false; $("error").textContent = message; $("cancel").hidden = true;
+}
+const tick = () => new Promise(r => setTimeout(r, 0));
+
+$("speed").addEventListener("input", () => { $("speedOut").textContent = (+$("speed").value).toFixed(2).replace(/0$/, ""); });
+$("script").addEventListener("input", stats);
+
+// open or drop a .txt file
+function loadFile(file) {
+  if (!file) return;
+  if (!/\.(txt|md)$/i.test(file.name)) { fail("Use a .txt file here. The desktop app also opens Word files."); return; }
+  const r = new FileReader();
+  r.onload = () => { $("script").value = String(r.result).replace(/^\uFEFF/, ""); $("error").hidden = true; stats(); };
+  r.readAsText(file);
+}
+$("openFile").addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", () => { loadFile($("file").files[0]); $("file").value = ""; });
+const sheet = $("sheet");
+["dragenter", "dragover"].forEach(e => sheet.addEventListener(e, ev => { ev.preventDefault(); sheet.classList.add("over"); }));
+["dragleave", "drop"].forEach(e => sheet.addEventListener(e, ev => { ev.preventDefault(); sheet.classList.remove("over"); }));
+sheet.addEventListener("drop", ev => loadFile(ev.dataTransfer.files[0]));
+window.addEventListener("dragover", e => e.preventDefault());
+window.addEventListener("drop", e => e.preventDefault());
+
+// ---------------------------------------------------------------- model + render
+let tts = null, busy = false, cancelled = false, lastUrl = null;
+
+async function loadModel() {
+  if (tts) return tts;
+  show("Getting the voice ready", "Downloading the voice model. This happens once, then it is saved in your browser.", 0);
+  let mod;
+  try { mod = await import(LIB); }
+  catch { throw new Error("Could not load the voice library. Check your internet connection and try again."); }
+  const files = {};
+  const progress_callback = (p) => {
+    if (p && p.status === "progress" && p.total) {
+      files[p.file] = { loaded: p.loaded, total: p.total };
+      const all = Object.values(files), loaded = all.reduce((a, f) => a + f.loaded, 0), total = all.reduce((a, f) => a + f.total, 0);
+      show("Getting the voice ready", `Downloading the voice model: ${Math.round(loaded / 1048576)} of ${Math.round(total / 1048576)} MB. This happens once.`, loaded / total);
+    }
+  };
+  const attempts = navigator.gpu ? [{ device: "webgpu", dtype: "fp32" }, { device: "wasm", dtype: "q8" }] : [{ device: "wasm", dtype: "q8" }];
+  let last;
+  for (const opt of attempts) {
+    try { tts = await mod.KokoroTTS.from_pretrained(MODEL, { ...opt, progress_callback }); break; }
+    catch (e) { last = e; tts = null; }
+  }
+  if (!tts) throw new Error("The voice model could not start in this browser. Try Chrome or Edge on a computer. (" + (last && last.message || "unknown error") + ")");
+  try {
+    const all = tts.voices && typeof tts.voices === "object" ? tts.voices : null;
+    if (all) {
+      const extra = {};
+      for (const [id, info] of Object.entries(all)) if (!known.has(id)) extra[id] = `${(info && info.name) || id} (${(info && info.language) || "other"})`;
+      fillVoices(extra);
+    }
+  } catch { /* the built-in list is enough */ }
+  return tts;
+}
+
+$("cancel").addEventListener("click", () => { cancelled = true; $("cancel").disabled = true; });
+
+$("go").addEventListener("click", async () => {
+  if (busy) return;
+  const text = $("script").value.trim();
+  if (!text || text.length > MAX_CHARS) return;
+  busy = true; cancelled = false; stats();
+  $("error").hidden = true; $("result").hidden = true; $("cancel").hidden = false; $("cancel").disabled = false;
+  try {
+    const model = await loadModel();
+    const chunks = makeChunks(text), voice = $("voice").value, speed = +$("speed").value;
+    const pieces = []; let rate = 24000, total = 0;
+    for (let i = 0; i < chunks.length; i++) {
+      if (cancelled) { show("Cancelled", "", 0); return; }
+      show("Making your voiceover", `Part ${i + 1} of ${chunks.length}`, i / chunks.length);
+      await tick();
+      const out = await model.generate(chunks[i].text, { voice, speed });
+      rate = out.sampling_rate || rate;
+      const data = out.audio || out.data;
+      pieces.push(data); total += data.length;
+      if (i < chunks.length - 1) { const gap = new Float32Array(Math.round(rate * (chunks[i].paragraphEnd ? 0.7 : 0.25))); pieces.push(gap); total += gap.length; }
+    }
+    const all = new Float32Array(total); let o = 0;
+    for (const p of pieces) { all.set(p, o); o += p.length; }
+    const blob = encodeWav(all, rate);
+    if (lastUrl) URL.revokeObjectURL(lastUrl);
+    lastUrl = URL.createObjectURL(blob);
+    $("player").src = lastUrl; $("download").href = lastUrl;
+    $("result").hidden = false;
+    show("Your voiceover is ready", `${(total / rate).toFixed(1)} seconds of audio.`, 1);
+    $("player").play().catch(() => {});
+  } catch (e) { fail(e.message || String(e)); }
+  finally { busy = false; $("cancel").hidden = true; stats(); }
+});
+
+stats();
+</script>
+</body>
+</html>

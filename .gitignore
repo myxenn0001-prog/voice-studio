@@ -1,0 +1,17 @@
+# Voice Studio runtime data and build output
+data/
+dist/
+build/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem

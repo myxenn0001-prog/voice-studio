@@ -1,0 +1,15 @@
+# NVIDIA GPU add-on. Needs the NVIDIA Container Toolkit (Linux) or Docker Desktop with WSL2 + NVIDIA drivers (Windows).
+# Use:  docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+services:
+  voice-studio:
+    build:
+      args:
+        TORCH_INDEX: https://download.pytorch.org/whl/cu124
+    image: voice-studio:gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

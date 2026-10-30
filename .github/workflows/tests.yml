@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run the tests (they use a fake voice engine, so no models are downloaded)
+        env:
+          VOICESTUDIO_MOCK: "1"
+        run: python -m pytest tests -q
+
+  installer-smoke:
+    name: Installer check (Linux AppImage)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the AppImage
+        run: bash packaging/linux/build_appimage.sh 0.0.0-ci
+      - name: First-launch setup works (light mode skips the big voice libraries)
+        env:
+          VOICESTUDIO_HOME: ${{ runner.temp }}/vs-home
+          VOICESTUDIO_SETUP_LIGHT: "1"
+          VOICESTUDIO_SETUP_NOLAUNCH: "1"
+        run: |
+          ./dist/VoiceStudio-Linux.AppImage --appimage-extract-and-run
+          test "$(cat "$VOICESTUDIO_HOME/.installed")" = "0.0.0-ci"
+          "$VOICESTUDIO_HOME/venv/bin/python" -c "import fastapi, uvicorn, soundfile; print('libraries import fine')"

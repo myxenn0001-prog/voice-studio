@@ -1,0 +1,16 @@
+services:
+  voice-studio:
+    build:
+      context: .
+      args:
+        PREFETCH: "0"      # change to "1" to ship models inside the image (larger, fully offline)
+    image: voice-studio:latest
+    container_name: voice-studio
+    ports:
+      - "127.0.0.1:8000:8000"   # only this computer can reach it
+    volumes:
+      - ./data:/app/data        # your voices, renders and settings
+      - models:/app/models      # downloaded voice models (kept between updates)
+    restart: unless-stopped
+volumes:
+  models:
