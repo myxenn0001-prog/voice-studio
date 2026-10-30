@@ -14,6 +14,9 @@ def run(cwd, *args):
 
 
 def test_set_identity(tmp_path):
+    import pytest
+    if run(ROOT, "--check").returncode == 0:
+        pytest.skip("project is already filled in; this test is for the blank template")
     repo = tmp_path / "copy"
     shutil.copytree(ROOT, repo, ignore=IGNORE)
     assert run(repo, "--check").returncode == 1                      # fresh project has placeholders
